@@ -26,9 +26,15 @@ jobs:
           echo "${{ secrets.OCI_KEY_FILE }}" > ~/.oci/oracle.pem
           chmod 600 ~/.oci/config ~/.oci/oracle.pem
 
-      - name: Attempt to Launch 24GB Server
+      - name: Fetch Latest Ubuntu Image and Launch
         run: |
           export PATH=$PATH:/home/runner/bin
+          
+          echo "Finding freshest Ubuntu image ID for Mumbai..."
+          LATEST_IMAGE_ID=$(oci compute image list --compartment-id ${{ vars.OCI_COMPARTMENT_ID }} --shape ${{ vars.OCI_INSTANCE_SHAPE }} --operating-system "Canonical Ubuntu" --query "data[0].id" --raw-output)
+          echo "Found Image ID: $LATEST_IMAGE_ID"
+
+          echo "Attempting to boot server..."
           oci compute instance launch \
             --availability-domain "InXg:AP-MUMBAI-1-AD-1" \
             --compartment-id ${{ vars.OCI_COMPARTMENT_ID }} \
@@ -36,5 +42,5 @@ jobs:
             --shape-config "{\"ocpus\": ${{ vars.OCI_OCPUS }}, \"memoryInGBs\": ${{ vars.OCI_MEMORY_IN_GBS }}}" \
             --subnet-id ${{ secrets.OCI_SUBNET_ID }} \
             --display-name "Minecraft-Multiverse-Server" \
-            --image-id "ocid1.image.oc1.ap-mumbai-1.aaaaaaaaj7yvxun7b3vuyasw2w7y46shg6p24c2cljfe67n544oxunsm7hka" \
+            --image-id "$LATEST_IMAGE_ID" \
             --metadata "{\"ssh_authorized_keys\": \"${{ vars.OCI_SSH_PUBLIC_KEY }}\"}"
