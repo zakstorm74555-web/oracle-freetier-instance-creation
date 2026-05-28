@@ -30,11 +30,11 @@ jobs:
         run: |
           export PATH=$PATH:/home/runner/bin
           oci compute instance launch \
-            --availability-domain "$(oci iam availability-domain list --compartment-id ${{ vars.OCI_COMPARTMENT_ID }} | jq -r '.data[0].name')" \
+            --availability-domain "InXg:AP-MUMBAI-1-AD-1" \
             --compartment-id ${{ vars.OCI_COMPARTMENT_ID }} \
             --shape ${{ vars.OCI_INSTANCE_SHAPE }} \
             --shape-config "{\"ocpus\": ${{ vars.OCI_OCPUS }}, \"memoryInGBs\": ${{ vars.OCI_MEMORY_IN_GBS }}}" \
             --subnet-id ${{ secrets.OCI_SUBNET_ID }} \
             --display-name "Minecraft-Multiverse-Server" \
-            --image-id "$(oci compute image list --compartment-id ${{ vars.OCI_COMPARTMENT_ID }} --shape ${{ vars.OCI_INSTANCE_SHAPE }} --operating-system "Canonical Ubuntu" | jq -r '.data[0].id')" \
+            --image-id "ocid1.image.oc1.ap-mumbai-1.aaaaaaaaj7yvxun7b3vuyasw2w7y46shg6p24c2cljfe67n544oxunsm7hka" \
             --metadata "{\"ssh_authorized_keys\": \"${{ vars.OCI_SSH_PUBLIC_KEY }}\"}"
