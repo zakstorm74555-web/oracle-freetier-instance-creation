@@ -1,0 +1,40 @@
+name: Oracle Cloud - Create Instance
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *' # Runs automatically every 15 minutes
+
+jobs:
+  run-builder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install OCI CLI
+        run: |
+          curl -L -O https://githubusercontent.com
+          chmod +x install.sh
+          ./install.sh --accept-all-defaults
+          echo "/home/runner/bin" >> $GITHUB_PATH
+
+      - name: Configure OCI Auth
+        run: |
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_CONFIG }}" > ~/.oci/config
+          echo "${{ secrets.OCI_KEY_FILE }}" > ~/.oci/oracle.pem
+          chmod 600 ~/.oci/config ~/.oci/oracle.pem
+
+      - name: Attempt to Launch 24GB Server
+        run: |
+          export PATH=$PATH:/home/runner/bin
+          oci compute instance launch \
+            --availability-domain "$(oci iam availability-domain list --compartment-id ${{ vars.OCI_COMPARTMENT_ID }} | jq -r '.data[0].name')" \
+            --compartment-id ${{ vars.OCI_COMPARTMENT_ID }} \
+            --shape ${{ vars.OCI_INSTANCE_SHAPE }} \
+            --shape-config "{\"ocpus\": ${{ vars.OCI_OCPUS }}, \"memoryInGBs\": ${{ vars.OCI_MEMORY_IN_GBS }}}" \
+            --subnet-id ${{ secrets.OCI_SUBNET_ID }} \
+            --display-name "Minecraft-Multiverse-Server" \
+            --image-id "$(oci compute image list --compartment-id ${{ vars.OCI_COMPARTMENT_ID }} --shape ${{ vars.OCI_INSTANCE_SHAPE }} --operating-system "Canonical Ubuntu" | jq -r '.data[0].id')" \
+            --metadata "{\"ssh_authorized_keys\": \"${{ vars.OCI_SSH_PUBLIC_KEY }}\"}"
